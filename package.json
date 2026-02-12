@@ -1,0 +1,23 @@
+{
+  "name": "menew",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "dev:api": "turbo run dev --filter=@menew/api",
+    "dev:admin": "turbo run dev --filter=@menew/admin",
+    "dev:web": "turbo run dev --filter=@menew/web",
+    "db:generate": "turbo run db:generate --filter=@menew/database",
+    "db:push": "turbo run db:push --filter=@menew/database",
+    "db:migrate": "turbo run db:migrate --filter=@menew/database"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "npm@10.2.0"
+}
