@@ -13,6 +13,96 @@ import { authorize } from "../../middleware/rbac";
 
 export const authRouter = Router();
 
+// POST /api/auth/setup — Create the very first user (only works when DB is empty)
+authRouter.post("/setup", async (req, res, next) => {
+    try {
+        // Check if any user already exists
+        const userCount = await prisma.user.count();
+        if (userCount > 0) {
+            res.status(403).json({
+                success: false,
+                error: "Setup sudah selesai. Gunakan /login untuk masuk.",
+            });
+            return;
+        }
+
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            res.status(400).json({
+                success: false,
+                error: "name, email, dan password wajib diisi",
+            });
+            return;
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Create default tenant
+        const tenant = await prisma.tenant.create({
+            data: {
+                name: "MeNew Default",
+                slug: "menew-default",
+                status: "ACTIVE",
+                subscription: {
+                    create: {
+                        plan: "PREMIUM",
+                        maxStores: 10,
+                    },
+                },
+            },
+        });
+
+        // Create SUPER_ADMIN user
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                role: "SUPER_ADMIN",
+                tenantId: tenant.id,
+            },
+        });
+
+        const payload: TokenPayload = {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+            tenantId: tenant.id,
+        };
+
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken },
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "Setup berhasil! User SUPER_ADMIN telah dibuat.",
+            data: {
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    tenantId: tenant.id,
+                },
+                tenant: {
+                    id: tenant.id,
+                    name: tenant.name,
+                    slug: tenant.slug,
+                },
+                accessToken,
+                refreshToken,
+            },
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // POST /api/auth/login
 authRouter.post("/login", async (req, res, next) => {
     try {

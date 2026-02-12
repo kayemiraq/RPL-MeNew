@@ -8,7 +8,7 @@ import { Server as SocketIOServer } from "socket.io";
 
 export const productRouter = Router();
 
-productRouter.use(authenticate, authorize("OWNER", "MANAGER"));
+productRouter.use(authenticate, authorize("SUPER_ADMIN", "OWNER", "MANAGER"));
 
 // GET /api/products?storeId=...
 productRouter.get("/", async (req: AuthRequest, res, next) => {

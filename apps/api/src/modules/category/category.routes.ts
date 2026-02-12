@@ -6,7 +6,7 @@ import { authorize } from "../../middleware/rbac";
 
 export const categoryRouter = Router();
 
-categoryRouter.use(authenticate, authorize("OWNER", "MANAGER"));
+categoryRouter.use(authenticate, authorize("SUPER_ADMIN", "OWNER", "MANAGER"));
 
 // GET /api/categories?storeId=...
 categoryRouter.get("/", async (req: AuthRequest, res, next) => {
